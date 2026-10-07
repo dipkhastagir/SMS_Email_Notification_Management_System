@@ -1,0 +1,104 @@
+@model IEnumerable<QueueItemDto>
+@{
+    ViewData["Title"] = "Message queue";
+    ViewData["Section"] = "Messaging";
+    string? status = ViewBag.Status;
+    string? channel = ViewBag.Channel;
+    var counts = (IDictionary<string, int>)ViewBag.Counts;
+    int Count(string s) => counts.TryGetValue(s, out var n) ? n : 0;
+    var tabs = new[] { "Pending", "Processing", "Retrying", "Sent", "Failed", "Cancelled" };
+}
+<div class="page-head">
+    <div>
+        <h1>Message queue</h1>
+        <p>Composed messages wait here until the dispatch job sends them, usually within a minute. Failed sends are retried up to three times.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-soft" asp-action="Index" asp-route-status="@status" asp-route-channel="@channel"><i class="bi bi-arrow-clockwise me-1"></i> Refresh</a>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between flex-wrap gap-2 mb-3">
+    <div class="filter-tabs">
+        <a class="@(string.IsNullOrEmpty(status) ? "active" : "")" asp-action="Index" asp-route-channel="@channel">All<span class="n">@counts.Values.Sum()</span></a>
+        @foreach (var t in tabs)
+        {
+            <a class="@(status == t ? "active" : "")" asp-action="Index" asp-route-status="@t" asp-route-channel="@channel">@t<span class="n">@Count(t)</span></a>
+        }
+    </div>
+    <div class="filter-tabs">
+        <a class="@(string.IsNullOrEmpty(channel) ? "active" : "")" asp-action="Index" asp-route-status="@status">Any channel</a>
+        <a class="@(channel == "SMS" ? "active" : "")" asp-action="Index" asp-route-status="@status" asp-route-channel="SMS">SMS</a>
+        <a class="@(channel == "Email" ? "active" : "")" asp-action="Index" asp-route-status="@status" asp-route-channel="Email">Email</a>
+    </div>
+</div>
+
+<div class="panel panel-flush">
+    @if (!Model.Any())
+    {
+        <partial name="_EmptyState" model='new EmptyStateModel("bi-stack", "The queue is empty", "Messages appear here when a trigger fires or someone sends one by hand.")' />
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>#</th><th>Recipient</th><th>Message</th><th>Source</th><th>Status</th><th class="num">Tries</th><th>Queued</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var m in Model)
+                    {
+                        <tr>
+                            <td class="cell-sub">@m.MessageId</td>
+                            <td>
+                                <div class="cell-title">@m.RecipientName</div>
+                                <div class="cell-sub"><i class="bi @UiHelper.ChannelIcon(m.Channel)"></i> @m.RecipientContact</div>
+                            </td>
+                            <td><div class="clip" title="@m.MessageBody">@(m.Subject != null ? m.Subject + ": " : "")@m.MessageBody</div></td>
+                            <td class="cell-sub">@(m.TriggerName ?? (m.CreatedByName != null ? "Sent by " + m.CreatedByName : "Manual"))</td>
+                            <td><span class="pill @UiHelper.StatusClass(m.Status)">@m.Status</span></td>
+                            <td class="num">@m.RetryCount</td>
+                            <td class="cell-sub" title="@m.CreatedAt.ToString("dd MMM yyyy HH:mm")">@UiHelper.TimeAgo(m.CreatedAt)</td>
+                            <td>
+                                <div class="row-actions">
+                                    <button type="button" class="btn btn-soft btn-sm" aria-label="Details"
+                                            data-attempts="@m.MessageId" data-url="@Url.Action("Attempts", new { id = m.MessageId })"
+                                            data-body="@m.MessageBody" data-subject="@m.Subject">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    @if (m.CanRetry)
+                                    {
+                                        <form asp-action="Retry" asp-route-id="@m.MessageId" method="post">
+                                            <button class="btn btn-soft btn-sm" type="submit" title="Retry"><i class="bi bi-arrow-repeat"></i> Retry</button>
+                                        </form>
+                                    }
+                                    @if (m.CanCancel)
+                                    {
+                                        <form asp-action="Cancel" asp-route-id="@m.MessageId" method="post" data-confirm="@($"Cancel message #{m.MessageId} to {m.RecipientName}? It will not be sent.")" data-confirm-button="Cancel message">
+                                            <button class="btn btn-danger-soft btn-sm" type="submit" aria-label="Cancel"><i class="bi bi-x-lg"></i></button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="attemptsDrawer" aria-labelledby="drawerTitle">
+    <div class="offcanvas-header">
+        <h2 class="offcanvas-title" id="drawerTitle" data-drawer-title>Message</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="preview-shell mb-4">
+            <div class="bubble">
+                <div class="email-subject" data-drawer-subject></div>
+                <div data-drawer-body-text></div>
+            </div>
+        </div>
+        <h3>Delivery attempts</h3>
+        <div data-drawer-attempts></div>
+    </div>
+</div>

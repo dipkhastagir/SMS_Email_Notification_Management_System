@@ -1,0 +1,10 @@
+@{
+    ViewData["Title"] = "No access";
+    Layout = User.Identity?.IsAuthenticated == true ? "_Layout" : "_AuthLayout";
+}
+<div class="panel empty" style="max-width:560px;margin:40px auto;">
+    <i class="bi bi-shield-lock"></i>
+    <strong>Your role can't open this page</strong>
+    <p>You're signed in as @(User.GetRole() is { Length: > 0 } r ? r : "a guest"). Ask an administrator if you need access.</p>
+    <a class="btn btn-ink mt-2" asp-controller="Dashboard" asp-action="Index">Back to dashboard</a>
+</div>

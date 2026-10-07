@@ -1,0 +1,40 @@
+@model UserFormViewModel
+@{
+    ViewData["Title"] = Model.IsEdit ? "Edit user" : "Add user";
+    ViewData["Section"] = "Users & roles";
+}
+<div class="page-head"><div><h1>@ViewData["Title"]</h1></div></div>
+<div class="panel" style="max-width:600px">
+    <form asp-action="@(Model.IsEdit ? "Edit" : "Create")" method="post">
+        <input type="hidden" asp-for="UserId" />
+        <div class="form-floating mb-3">
+            <input asp-for="FullName" class="form-control" placeholder=" " />
+            <label asp-for="FullName"></label>
+            <span asp-validation-for="FullName"></span>
+        </div>
+        <div class="form-floating mb-3">
+            <input asp-for="Email" class="form-control" placeholder=" " autocomplete="off" />
+            <label asp-for="Email"></label>
+            <span asp-validation-for="Email"></span>
+        </div>
+        <div class="form-floating mb-3">
+            <select asp-for="Role" class="form-select">
+                @foreach (var r in AppRoles.All)
+                {
+                    <option value="@r">@r</option>
+                }
+            </select>
+            <label asp-for="Role"></label>
+            <span asp-validation-for="Role"></span>
+        </div>
+        <div class="form-floating mb-1">
+            <input asp-for="Password" class="form-control" placeholder=" " autocomplete="new-password" />
+            <label asp-for="Password">@(Model.IsEdit ? "New password (optional)" : "Starting password")</label>
+        </div>
+        <div class="form-hint mb-4">@(Model.IsEdit ? "Leave empty to keep the current password." : "At least 8 characters. The user can change it after signing in.")</div>
+        <span asp-validation-for="Password"></span>
+        <button class="btn btn-ink" type="submit">Save user</button>
+        <a class="btn btn-soft" asp-action="Index">Cancel</a>
+    </form>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

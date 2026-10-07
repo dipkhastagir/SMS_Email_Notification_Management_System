@@ -1,0 +1,114 @@
+@model TemplateFormViewModel
+@inject SMSNotificationSystem.Services.Interfaces.ITriggerService TriggerService
+@{
+    ViewData["Title"] = Model.IsEdit ? "Edit template" : "New template";
+    ViewData["Section"] = "Templates";
+    var samples = new Dictionary<string, string>();
+    foreach (var key in EventTypes.All.Keys)
+        foreach (var pair in TriggerService.SampleValues(key)) samples[pair.Key] = pair.Value;
+}
+<div class="page-head">
+    <div>
+        <h1>@ViewData["Title"]</h1>
+        <p>Click a placeholder to insert it where your cursor is. The preview on the right fills it with sample data.</p>
+    </div>
+</div>
+
+<form asp-action="@(Model.IsEdit ? "Edit" : "Create")" method="post">
+    <input type="hidden" asp-for="TemplateId" />
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="panel">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+                <div class="form-floating mb-3">
+                    <input asp-for="Name" class="form-control" placeholder=" " />
+                    <label asp-for="Name">Template name</label>
+                    <span asp-validation-for="Name"></span>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                        <div class="form-floating">
+                            <select asp-for="CategoryId" asp-items="Model.Categories" class="form-select">
+                                <option value="0">Choose…</option>
+                            </select>
+                            <label asp-for="CategoryId"></label>
+                        </div>
+                        <span asp-validation-for="CategoryId"></span>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="form-floating">
+                            <select asp-for="Status" class="form-select">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive (triggers skip it)</option>
+                            </select>
+                            <label asp-for="Status"></label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">Channel</div>
+                <div class="segmented mb-3">
+                    <input type="radio" id="ch-sms" name="Channel" value="SMS" @(Model.Channel != "Email" ? "checked" : "") />
+                    <label for="ch-sms"><i class="bi bi-phone"></i> SMS</label>
+                    <input type="radio" id="ch-email" name="Channel" value="Email" @(Model.Channel == "Email" ? "checked" : "") />
+                    <label for="ch-email"><i class="bi bi-envelope"></i> Email</label>
+                </div>
+
+                <div class="form-floating mb-3" data-subject-wrap>
+                    <input asp-for="Subject" class="form-control" placeholder=" " data-template-subject />
+                    <label asp-for="Subject"></label>
+                    <span asp-validation-for="Subject"></span>
+                </div>
+
+                <div class="form-floating mb-2">
+                    <textarea asp-for="Body" class="form-control" placeholder=" " style="height:170px" data-template-body></textarea>
+                    <label asp-for="Body"></label>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span asp-validation-for="Body"></span>
+                    <span class="form-hint ms-auto" data-counter data-sms-only></span>
+                </div>
+
+                <div class="form-section mt-4">Placeholders</div>
+                @foreach (var info in EventTypes.All.Values)
+                {
+                    <div class="mb-2">
+                        <div class="cell-sub mb-1"><i class="bi @info.Icon me-1"></i>@info.DisplayName</div>
+                        @foreach (var p in info.Placeholders)
+                        {
+                            <button type="button" class="chip" data-insert="@p">@p</button>
+                        }
+                    </div>
+                }
+                <div class="mb-2">
+                    <div class="cell-sub mb-1"><i class="bi bi-globe2 me-1"></i>Any template</div>
+                    @foreach (var p in EventTypes.GlobalPlaceholders)
+                    {
+                        <button type="button" class="chip" data-insert="@p">@p</button>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="panel position-sticky" style="top:96px">
+                <div class="panel-head"><h3>Preview</h3><span class="cell-sub">with sample data</span></div>
+                <div class="preview-shell">
+                    <div class="bubble">
+                        <div class="email-subject" data-email-only data-preview-subject></div>
+                        <div data-preview></div>
+                    </div>
+                    <div class="bubble-meta"><span>NotifyHub</span><span>@DateTime.Now.ToString("HH:mm")</span></div>
+                </div>
+                <div class="d-flex gap-2 mt-4">
+                    <button class="btn btn-ink" type="submit">Save template</button>
+                    <a class="btn btn-soft" asp-action="Index">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<script type="application/json" id="sampleValues">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(samples))</script>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -1,0 +1,67 @@
+@model IEnumerable<Product>
+@{
+    ViewData["Title"] = "Stock";
+    ViewData["Section"] = "Business data";
+}
+<div class="page-head">
+    <div>
+        <h1>Stock</h1>
+        <p>When a product's quantity reaches its reorder level, the low stock trigger alerts the store manager. Use stock in and out to try it.</p>
+    </div>
+    <div class="page-actions"><a class="btn btn-ink" asp-action="Create"><i class="bi bi-plus-lg me-1"></i> New product</a></div>
+</div>
+<div class="panel panel-flush">
+    @if (!Model.Any())
+    {
+        <partial name="_EmptyState" model='new EmptyStateModel("bi-box-seam", "No products yet", "Add a product with a reorder level to try the low stock alert.")' />
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Product</th><th>Level</th><th class="num">Unit price</th><th>Stock in / out</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var p in Model)
+                    {
+                        var pct = p.ReorderLevel == 0 ? 100 : Math.Min(100, (int)(100.0 * p.StockQty / (p.ReorderLevel * 3)));
+                        <tr>
+                            <td>
+                                <div class="cell-title">@p.ProductName</div>
+                                <div class="cell-sub">@(p.Sku ?? "No SKU")</div>
+                            </td>
+                            <td style="min-width:200px">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span><strong>@p.StockQty</strong> in stock</span>
+                                    <span class="text-muted">reorder at @p.ReorderLevel</span>
+                                </div>
+                                <div class="progress" style="height:6px;border-radius:99px" role="progressbar" aria-valuenow="@p.StockQty" aria-valuemin="0" aria-label="Stock level">
+                                    <div class="progress-bar" style="width:@pct%;background:@(p.IsLowStock ? "var(--bad)" : "var(--ok)")"></div>
+                                </div>
+                                @if (p.IsLowStock)
+                                {
+                                    <span class="pill pill-bad mt-2">At reorder level</span>
+                                }
+                            </td>
+                            <td class="num">@UiHelper.Taka(p.UnitPrice)</td>
+                            <td>
+                                <form asp-action="AdjustStock" asp-route-id="@p.ProductId" method="post" class="d-flex gap-1">
+                                    <input type="number" name="quantity" min="1" value="1" class="form-control form-control-sm" style="width:80px" aria-label="Quantity" />
+                                    <button class="btn btn-soft btn-sm" name="direction" value="in" type="submit" title="Stock in"><i class="bi bi-plus-lg"></i></button>
+                                    <button class="btn btn-soft btn-sm" name="direction" value="out" type="submit" title="Stock out"><i class="bi bi-dash-lg"></i></button>
+                                </form>
+                            </td>
+                            <td>
+                                <div class="row-actions">
+                                    <a class="btn btn-soft btn-sm" asp-action="Edit" asp-route-id="@p.ProductId" aria-label="Edit"><i class="bi bi-pencil"></i></a>
+                                    <form asp-action="Delete" asp-route-id="@p.ProductId" method="post" data-confirm="Delete @p.ProductName?">
+                                        <button class="btn btn-danger-soft btn-sm" type="submit" aria-label="Delete"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

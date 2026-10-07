@@ -1,0 +1,72 @@
+@model PayrollViewModel
+@{
+    ViewData["Title"] = "Payroll";
+    ViewData["Section"] = "Business data";
+    var unpaidCount = Model.Employees.Count(e => !Model.Payments.ContainsKey(e.EmployeeId));
+}
+<div class="page-head">
+    <div>
+        <h1>Payroll for @Model.MonthLabel</h1>
+        <p>Disbursing a salary records the payment once per month. The salary trigger then sends the employee a confirmation.</p>
+    </div>
+    <div class="page-actions">
+        <form method="get" asp-action="Index" class="d-flex gap-2">
+            <input type="month" name="month" value="@Model.Month" class="form-control" aria-label="Month" />
+            <button class="btn btn-soft" type="submit">Open</button>
+        </form>
+        @if (unpaidCount > 0)
+        {
+            <form asp-action="DisburseAll" method="post" data-confirm="Disburse @Model.MonthLabel salary to @unpaidCount employee(s), @UiHelper.Taka(Model.TotalDue) in total?" data-confirm-button="Disburse all">
+                <input type="hidden" name="month" value="@Model.Month" />
+                <button class="btn btn-signal" type="submit"><i class="bi bi-cash-coin me-1"></i> Disburse all</button>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-sm-6"><div class="panel metric"><span class="m-icon tint-ok"><i class="bi bi-check2-circle"></i></span><div><div class="m-value">@UiHelper.Taka(Model.TotalPaid)</div><div class="m-label">Paid to @Model.Payments.Count employee(s)</div></div></div></div>
+    <div class="col-sm-6"><div class="panel metric"><span class="m-icon tint-warn"><i class="bi bi-hourglass"></i></span><div><div class="m-value">@UiHelper.Taka(Model.TotalDue)</div><div class="m-label">Still to pay, @unpaidCount employee(s)</div></div></div></div>
+</div>
+
+<div class="panel panel-flush">
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>Employee</th><th>Department</th><th class="num">Salary</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var e in Model.Employees)
+                {
+                    var paid = Model.Payments.TryGetValue(e.EmployeeId, out var p) ? p : null;
+                    <tr>
+                        <td><div class="cell-title">@e.FullName</div><div class="cell-sub">@e.Phone</div></td>
+                        <td>@e.Department</td>
+                        <td class="num">@UiHelper.Taka(paid?.Amount ?? e.Salary)</td>
+                        <td>
+                            @if (paid != null)
+                            {
+                                <span class="pill pill-ok">Paid</span>
+                                <div class="cell-sub mt-1">@paid.PaidAt.ToString("dd MMM, HH:mm")@(paid.PaidByName != null ? " by " + paid.PaidByName : "")</div>
+                            }
+                            else
+                            {
+                                <span class="pill pill-info">Unpaid</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="row-actions">
+                                @if (paid == null)
+                                {
+                                    <form asp-action="Disburse" method="post">
+                                        <input type="hidden" name="employeeId" value="@e.EmployeeId" />
+                                        <input type="hidden" name="month" value="@Model.Month" />
+                                        <button class="btn btn-soft btn-sm" type="submit"><i class="bi bi-cash"></i> Disburse</button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

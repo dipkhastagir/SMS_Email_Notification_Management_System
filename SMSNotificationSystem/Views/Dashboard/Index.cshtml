@@ -1,0 +1,155 @@
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewData["Section"] = "Overview";
+    var s = Model.Stats;
+    var canRun = User.IsInRole(AppRoles.Administrator) || User.IsInRole(AppRoles.Manager);
+    var firstName = (User.Identity?.Name ?? "").Split(' ').FirstOrDefault();
+}
+
+<section class="dispatch-line" data-live-url="@Url.Action("Stats", "Dashboard")">
+    <h1>Good @(DateTime.Now.Hour < 12 ? "morning" : DateTime.Now.Hour < 17 ? "afternoon" : "evening"), @firstName</h1>
+    <p class="lede">Every notification moves along this line: a trigger spots a business event, the message waits in the queue, and the gateway delivers it.</p>
+
+    <div class="stations">
+        <div class="track" aria-hidden="true"><span class="pulse"></span></div>
+
+        <div class="station">
+            <a asp-controller="Trigger" asp-action="Index">
+                <div class="node"><i class="bi bi-lightning-charge"></i></div>
+                <div class="value" data-stat="activeTriggers">@s.ActiveTriggers</div>
+                <div class="label">Active triggers</div>
+            </a>
+        </div>
+        <div class="station">
+            <a asp-controller="Queue" asp-action="Index" asp-route-status="Pending">
+                <div class="node"><i class="bi bi-stack"></i></div>
+                <div class="value" data-stat="queuedMessages">@s.QueuedMessages</div>
+                <div class="label">Waiting in queue</div>
+            </a>
+        </div>
+        <div class="station">
+            <a asp-controller="Queue" asp-action="Index" asp-route-status="Retrying">
+                <div class="node"><i class="bi bi-arrow-repeat"></i></div>
+                <div class="value" data-stat="retryingMessages">@s.RetryingMessages</div>
+                <div class="label">Retrying</div>
+            </a>
+        </div>
+        <div class="station is-signal">
+            <a asp-controller="DeliveryLog" asp-action="Index" asp-route-status="Sent">
+                <div class="node"><i class="bi bi-check2-all"></i></div>
+                <div class="value" data-stat="sentToday">@s.SentToday</div>
+                <div class="label">Delivered today</div>
+            </a>
+        </div>
+        <div class="station is-bad">
+            <a asp-controller="Queue" asp-action="Index" asp-route-status="Failed">
+                <div class="node"><i class="bi bi-x-octagon"></i></div>
+                <div class="value" data-stat="failedMessages">@s.FailedMessages</div>
+                <div class="label">Failed, need attention</div>
+            </a>
+        </div>
+    </div>
+
+    @if (canRun)
+    {
+        <div class="quick-actions">
+            <form asp-action="RunTriggerScan" method="post" class="m-0">
+                <button class="btn btn-signal" type="submit"><i class="bi bi-lightning-charge-fill me-1"></i> Run trigger scan now</button>
+            </form>
+            <form asp-action="DispatchNow" method="post" class="m-0">
+                <button class="btn btn-ghost-light" type="submit"><i class="bi bi-send me-1"></i> Dispatch queue now</button>
+            </form>
+        </div>
+    }
+</section>
+
+<div class="row g-4 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="panel metric">
+            <span class="m-icon tint-ok"><i class="bi bi-graph-up-arrow"></i></span>
+            <div><div class="m-value" data-stat="successRate">@s.SuccessRate%</div><div class="m-label">Delivery success rate</div></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="panel metric">
+            <span class="m-icon tint-info"><i class="bi bi-chat-square-text"></i></span>
+            <div><div class="m-value">@s.ActiveTemplates</div><div class="m-label">Active templates</div></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="panel metric">
+            <span class="m-icon tint-warn"><i class="bi bi-box-seam"></i></span>
+            <div><div class="m-value">@s.LowStockItems</div><div class="m-label">Products at reorder level</div></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="panel metric">
+            <span class="m-icon tint-bad"><i class="bi bi-receipt"></i></span>
+            <div><div class="m-value">@s.UnpaidInvoices</div><div class="m-label">Unpaid invoices</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-5">
+        <div class="panel h-100">
+            <div class="panel-head">
+                <h2>Last 7 days</h2>
+                <div class="legend"><span class="l-sent">Sent</span><span class="l-failed">Failed attempts</span></div>
+            </div>
+            <div class="bars">
+                @foreach (var d in Model.Daily)
+                {
+                    var total = d.SentCount + d.FailedCount;
+                    var height = (int)Math.Round(100.0 * total / Model.ChartMax);
+                    var sentShare = total == 0 ? 0 : 100.0 * d.SentCount / total;
+                    <div class="bar-col" title="@d.Day.ToString("dd MMM"): @d.SentCount sent, @d.FailedCount failed">
+                        <span class="bar-total">@total</span>
+                        <div class="bar-stack" style="height:@(Math.Max(height, 4))%">
+                            @if (total > 0)
+                            {
+                                <div class="bar-sent" style="height:@(sentShare.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%"></div>
+                                <div class="bar-failed" style="flex:1"></div>
+                            }
+                        </div>
+                        <span class="bar-day">@(d.Day.Date == DateTime.Today ? "Today" : d.Day.ToString("ddd"))</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-7">
+        <div class="panel panel-flush h-100">
+            <div class="panel-head">
+                <h2>Recent deliveries</h2>
+                <a class="btn btn-soft btn-sm" asp-controller="DeliveryLog" asp-action="Index">Open delivery log</a>
+            </div>
+            @if (!Model.RecentDeliveries.Any())
+            {
+                <partial name="_EmptyState" model='new EmptyStateModel("bi-inbox", "Nothing delivered yet", "Run a trigger scan or send a message to see results here.")' />
+            }
+            else
+            {
+                <div class="table-wrap mt-3">
+                    <table class="table">
+                        <thead><tr><th>Recipient</th><th>Channel</th><th>Trigger</th><th>Status</th><th class="num">When</th></tr></thead>
+                        <tbody>
+                            @foreach (var d in Model.RecentDeliveries)
+                            {
+                                <tr>
+                                    <td><div class="cell-title">@d.RecipientName</div><div class="cell-sub">@d.RecipientContact</div></td>
+                                    <td><span class="channel"><i class="bi @UiHelper.ChannelIcon(d.Channel)"></i>@d.Channel</span></td>
+                                    <td>@d.TriggerName</td>
+                                    <td><span class="pill @UiHelper.StatusClass(d.Status)">@d.Status</span></td>
+                                    <td class="num cell-sub">@UiHelper.TimeAgo(d.AttemptedAt)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

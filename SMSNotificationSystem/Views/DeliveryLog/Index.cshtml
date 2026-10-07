@@ -1,0 +1,100 @@
+@model IEnumerable<DeliveryReportDto>
+@{
+    ViewData["Title"] = "Delivery log";
+    ViewData["Section"] = "Messaging";
+    string? status = ViewBag.Status;
+    string? channel = ViewBag.Channel;
+    var list = Model.ToList();
+}
+<div class="page-head">
+    <div>
+        <h1>Delivery log</h1>
+        <p>One row for every send attempt, with the gateway's response and the reason when it failed.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-soft" asp-action="ExportCsv" asp-route-status="@status" asp-route-channel="@channel"
+           asp-route-search="@ViewBag.Search" asp-route-from="@ViewBag.From" asp-route-to="@ViewBag.To">
+            <i class="bi bi-filetype-csv me-1"></i> Export CSV
+        </a>
+    </div>
+</div>
+
+<form method="get" asp-action="Index" class="panel mb-4">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <div class="form-floating">
+                <input name="search" id="search" value="@ViewBag.Search" class="form-control" placeholder=" " />
+                <label for="search">Search recipient, trigger or reason</label>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="form-floating">
+                <select name="status" id="status" class="form-select">
+                    <option value="">Any</option>
+                    <option value="Sent" selected="@(status == "Sent")">Sent</option>
+                    <option value="Failed" selected="@(status == "Failed")">Failed</option>
+                </select>
+                <label for="status">Status</label>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="form-floating">
+                <select name="channel" id="channel" class="form-select">
+                    <option value="">Any</option>
+                    <option value="SMS" selected="@(channel == "SMS")">SMS</option>
+                    <option value="Email" selected="@(channel == "Email")">Email</option>
+                </select>
+                <label for="channel">Channel</label>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="form-floating">
+                <input type="date" name="from" id="from" value="@ViewBag.From" class="form-control" />
+                <label for="from">From</label>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="form-floating">
+                <input type="date" name="to" id="to" value="@ViewBag.To" class="form-control" />
+                <label for="to">To</label>
+            </div>
+        </div>
+        <div class="col-12 d-flex gap-2 justify-content-end">
+            <a class="btn btn-soft" asp-action="Index">Clear</a>
+            <button class="btn btn-ink" type="submit">Apply filters</button>
+        </div>
+    </div>
+</form>
+
+<div class="panel panel-flush">
+    @if (!list.Any())
+    {
+        <partial name="_EmptyState" model='new EmptyStateModel("bi-journal-check", "No attempts match these filters", "Clear the filters or widen the date range.")' />
+    }
+    else
+    {
+        <div class="panel-head pb-3">
+            <span class="cell-sub">Showing @list.Count attempt@(list.Count == 1 ? "" : "s"): @list.Count(l => l.Status == "Sent") sent, @list.Count(l => l.Status == "Failed") failed</span>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>When</th><th>Recipient</th><th>Channel</th><th>Trigger</th><th class="num">Attempt</th><th>Gateway</th><th>Status</th><th>Details</th></tr></thead>
+                <tbody>
+                    @foreach (var l in list)
+                    {
+                        <tr>
+                            <td class="cell-sub" style="white-space:nowrap">@l.AttemptedAt.ToString("dd MMM, HH:mm")</td>
+                            <td><div class="cell-title">@l.RecipientName</div><div class="cell-sub">@l.RecipientContact</div></td>
+                            <td><span class="channel"><i class="bi @UiHelper.ChannelIcon(l.Channel)"></i>@l.Channel</span></td>
+                            <td>@l.TriggerName</td>
+                            <td class="num">@l.AttemptNo</td>
+                            <td class="cell-sub">@l.GatewayProvider</td>
+                            <td><span class="pill @UiHelper.StatusClass(l.Status)">@l.Status</span></td>
+                            <td class="cell-sub"><div class="clip" style="max-width:240px" title="@l.GatewayResponse">@(l.FailureReason ?? l.GatewayResponse)</div></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

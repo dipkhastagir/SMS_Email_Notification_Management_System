@@ -1,0 +1,57 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Sign in";
+    Layout = "_AuthLayout";
+}
+<div class="auth-page">
+    <section class="auth-art" aria-hidden="true">
+        <div class="brand p-0">
+            <span class="brand-mark"><i class="bi bi-broadcast"></i></span>
+            <span>
+                <span class="brand-name d-block">NotifyHub</span>
+                <span class="brand-sub">by Best Business Bond Ltd.</span>
+            </span>
+        </div>
+
+        <div>
+            <h1>Business alerts that send themselves.</h1>
+            <p>Invoice reminders, low stock warnings, attendance and salary notices go out by SMS or Email the moment your data says they should.</p>
+        </div>
+
+        <div class="float-stage">
+            <div class="float-msg m1"><b>SMS to +8801711000101</b>Dear Rahim Traders, your invoice INV-2026-0001 of Tk 45,000.00 is due on Monday.<div class="tick"><i class="bi bi-check2-all"></i> Delivered</div></div>
+            <div class="float-msg m2"><b>Email to store manager</b>Toner Cartridge 85A dropped to 3 units.<div class="tick"><i class="bi bi-check2-all"></i> Delivered</div></div>
+            <div class="float-msg m3"><b>SMS to Arif Hossain</b>Your salary for this month has been disbursed.<div class="tick q"><i class="bi bi-clock"></i> In queue</div></div>
+        </div>
+        <div class="small" style="color:#7488aa">Troyee Business Solution</div>
+    </section>
+
+    <section class="auth-form-wrap">
+        <div class="auth-card">
+            <h2 class="mb-1" style="font-size:1.6rem">Sign in</h2>
+            <p class="text-muted mb-4">Use the account your administrator created for you.</p>
+
+            <form asp-action="Login" method="post" novalidate>
+                <input type="hidden" asp-for="ReturnUrl" />
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small rounded-4"></div>
+
+                <div class="form-floating mb-3">
+                    <input asp-for="Email" class="form-control" placeholder="name@company.com" autocomplete="username" autofocus />
+                    <label asp-for="Email">Email</label>
+                    <span asp-validation-for="Email"></span>
+                </div>
+                <div class="form-floating mb-3">
+                    <input asp-for="Password" class="form-control" placeholder="Password" autocomplete="current-password" />
+                    <label asp-for="Password">Password</label>
+                    <span asp-validation-for="Password"></span>
+                </div>
+                <div class="form-check mb-4">
+                    <input asp-for="RememberMe" class="form-check-input" />
+                    <label asp-for="RememberMe" class="form-check-label"></label>
+                </div>
+                <button type="submit" class="btn btn-ink w-100 py-2">Sign in</button>
+            </form>
+        </div>
+    </section>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

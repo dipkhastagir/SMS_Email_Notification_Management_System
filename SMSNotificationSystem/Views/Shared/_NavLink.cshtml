@@ -1,0 +1,11 @@
+@model NavLinkModel
+@{
+    var current = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    var isActive = string.Equals(current, Model.Controller, StringComparison.OrdinalIgnoreCase)
+                   && (Model.Controller != "Queue" || (Model.Action == "ManualSend") == (currentAction == "ManualSend"));
+}
+<a class="side-link @(isActive ? "active" : "")" asp-controller="@Model.Controller" asp-action="@Model.Action"
+   aria-current="@(isActive ? "page" : null)">
+    <i class="bi @Model.Icon"></i><span>@Model.Text</span>
+</a>

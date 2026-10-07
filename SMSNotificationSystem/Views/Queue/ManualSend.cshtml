@@ -1,0 +1,94 @@
+@model ManualSendViewModel
+@{
+    ViewData["Title"] = "Send a message";
+    ViewData["Section"] = "Messaging";
+}
+<div class="page-head">
+    <div>
+        <h1>Send a message</h1>
+        <p>Write a one-off SMS or Email. It joins the queue and goes out through the same gateway, retry and logging path as automatic alerts.</p>
+    </div>
+</div>
+
+<form asp-action="ManualSend" method="post">
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="panel">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+                @if (Model.Templates.Any())
+                {
+                    <div class="form-floating mb-3">
+                        <select asp-for="TemplateId" class="form-select" data-template-picker>
+                            <option value="">Write from scratch</option>
+                            @foreach (var t in Model.Templates)
+                            {
+                                <option value="@t.TemplateId" data-body="@t.Body" data-channel="@t.Channel" data-subject="@t.Subject">@t.Name (@t.Channel)</option>
+                            }
+                        </select>
+                        <label asp-for="TemplateId"></label>
+                    </div>
+                }
+
+                <div class="form-section">Channel</div>
+                <div class="segmented mb-3">
+                    <input type="radio" id="ch-sms" name="Channel" value="SMS" @(Model.Channel != "Email" ? "checked" : "") />
+                    <label for="ch-sms"><i class="bi bi-phone"></i> SMS</label>
+                    <input type="radio" id="ch-email" name="Channel" value="Email" @(Model.Channel == "Email" ? "checked" : "") />
+                    <label for="ch-email"><i class="bi bi-envelope"></i> Email</label>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-sm-5">
+                        <div class="form-floating">
+                            <input asp-for="RecipientName" class="form-control" placeholder=" " />
+                            <label asp-for="RecipientName"></label>
+                        </div>
+                        <span asp-validation-for="RecipientName"></span>
+                    </div>
+                    <div class="col-sm-7">
+                        <div class="form-floating">
+                            <input asp-for="RecipientContact" class="form-control" placeholder=" " />
+                            <label asp-for="RecipientContact"></label>
+                        </div>
+                        <span asp-validation-for="RecipientContact"></span>
+                    </div>
+                </div>
+
+                <div class="form-floating mb-3" data-subject-wrap>
+                    <input asp-for="Subject" class="form-control" placeholder=" " data-template-subject />
+                    <label asp-for="Subject"></label>
+                    <span asp-validation-for="Subject"></span>
+                </div>
+
+                <div class="form-floating mb-2">
+                    <textarea asp-for="MessageBody" class="form-control" placeholder=" " style="height:170px" data-template-body></textarea>
+                    <label asp-for="MessageBody"></label>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span asp-validation-for="MessageBody"></span>
+                    <span class="form-hint ms-auto" data-counter data-sms-only></span>
+                </div>
+                <div class="form-hint">Placeholders from event templates stay as written in manual messages, except {RecipientName}.</div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="panel position-sticky" style="top:96px">
+                <div class="panel-head"><h3>Preview</h3></div>
+                <div class="preview-shell">
+                    <div class="bubble">
+                        <div class="email-subject" data-email-only data-preview-subject></div>
+                        <div data-preview></div>
+                    </div>
+                    <div class="bubble-meta"><span>NotifyHub</span><span>@DateTime.Now.ToString("HH:mm")</span></div>
+                </div>
+                <div class="d-flex gap-2 mt-4">
+                    <button class="btn btn-signal" type="submit"><i class="bi bi-send-fill me-1"></i> Queue message</button>
+                    <a class="btn btn-soft" asp-action="Index">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<script type="application/json" id="sampleValues">{}</script>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

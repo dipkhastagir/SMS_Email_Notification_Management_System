@@ -1,0 +1,5 @@
+<div class="toast-stack" id="toastStack" aria-live="polite"></div>
+@if (TempData["ToastMessage"] is string toastMessage)
+{
+    <span hidden data-toast="@toastMessage" data-toast-type="@(TempData["ToastType"] ?? "success")"></span>
+}

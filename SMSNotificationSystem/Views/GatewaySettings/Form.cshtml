@@ -1,0 +1,53 @@
+@model GatewayFormViewModel
+@{
+    ViewData["Title"] = Model.IsEdit ? "Edit gateway" : "Add gateway";
+    ViewData["Section"] = "Gateways";
+}
+<div class="page-head">
+    <div>
+        <h1>@ViewData["Title"]</h1>
+        <p>Credentials are only visible to administrators. To use a real provider, add its class that implements INotificationGateway.</p>
+    </div>
+</div>
+<div class="panel" style="max-width:640px">
+    <form asp-action="@(Model.IsEdit ? "Edit" : "Create")" method="post">
+        <input type="hidden" asp-for="GatewayId" />
+        <div class="form-floating mb-3">
+            <input asp-for="Provider" class="form-control" placeholder=" " />
+            <label asp-for="Provider"></label>
+            <span asp-validation-for="Provider"></span>
+        </div>
+        <div class="form-section">Channel</div>
+        <div class="segmented mb-3">
+            <input type="radio" id="g-sms" name="Channel" value="SMS" @(Model.Channel != "Email" ? "checked" : "") />
+            <label for="g-sms"><i class="bi bi-phone"></i> SMS</label>
+            <input type="radio" id="g-email" name="Channel" value="Email" @(Model.Channel == "Email" ? "checked" : "") />
+            <label for="g-email"><i class="bi bi-envelope"></i> Email</label>
+        </div>
+        <div class="form-floating mb-1">
+            <input asp-for="ApiKey" class="form-control" placeholder=" " autocomplete="off" />
+            <label asp-for="ApiKey"></label>
+        </div>
+        @if (Model.IsEdit)
+        {
+            <div class="form-hint mb-3">Saved key: <code>@Model.MaskedApiKey</code>. Leave empty to keep it.</div>
+        }
+        <span asp-validation-for="ApiKey"></span>
+        <div class="form-floating my-3">
+            <input asp-for="SenderId" class="form-control" placeholder=" " />
+            <label asp-for="SenderId"></label>
+            <span asp-validation-for="SenderId"></span>
+        </div>
+        <div class="form-check form-switch mb-2">
+            <input asp-for="IsPrimary" class="form-check-input" role="switch" />
+            <label asp-for="IsPrimary" class="form-check-label ms-2"></label>
+        </div>
+        <div class="form-check form-switch mb-4">
+            <input asp-for="IsActive" class="form-check-input" role="switch" />
+            <label asp-for="IsActive" class="form-check-label ms-2"></label>
+        </div>
+        <button class="btn btn-ink" type="submit">Save gateway</button>
+        <a class="btn btn-soft" asp-action="Index">Cancel</a>
+    </form>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

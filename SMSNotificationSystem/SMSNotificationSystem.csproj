@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>SMSNotificationSystem</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
+    <PackageReference Include="Dapper" Version="2.1.79" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.25" />
+    <PackageReference Include="Hangfire.SqlServer" Version="1.8.25" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.2" />
+    <!-- Hangfire pulls in Newtonsoft.Json 11.0.1 (NU1903 vulnerability warning); force the patched version -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <!-- Safety net: if another copy of the project is ever extracted INSIDE this folder,
+       don't compile it twice (that causes CS0101 / CS0111 / CS8802 duplicate errors) -->
+  <ItemGroup>
+    <Compile Remove="SMSNotificationSystem\**" />
+    <Content Remove="SMSNotificationSystem\**" />
+    <None Remove="SMSNotificationSystem\**" />
+    <EmbeddedResource Remove="SMSNotificationSystem\**" />
+  </ItemGroup>
+
+  <!-- SQL scripts: run by hand in SSMS, and also embedded so the app can create the database on startup -->
+  <ItemGroup>
+    <None Remove="SQL\*.sql" />
+    <EmbeddedResource Include="SQL\*.sql" LogicalName="%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

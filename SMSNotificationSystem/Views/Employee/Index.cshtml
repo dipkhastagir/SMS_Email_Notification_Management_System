@@ -1,0 +1,46 @@
+@model IEnumerable<Employee>
+@{
+    ViewData["Title"] = "Employees";
+    ViewData["Section"] = "Business data";
+}
+<div class="page-head">
+    <div>
+        <h1>Employees</h1>
+        <p>Attendance and salary alerts use each employee's phone for SMS templates and email for Email templates.</p>
+    </div>
+    <div class="page-actions"><a class="btn btn-ink" asp-action="Create"><i class="bi bi-person-plus me-1"></i> Add employee</a></div>
+</div>
+<div class="panel panel-flush">
+    @if (!Model.Any())
+    {
+        <partial name="_EmptyState" model='new EmptyStateModel("bi-people", "No employees yet", "Add employees to use attendance and salary alerts.")' />
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Name</th><th>Department</th><th>Contact</th><th class="num">Salary</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var e in Model)
+                    {
+                        <tr class="@(e.IsActive ? "" : "opacity-50")">
+                            <td><div class="cell-title">@e.FullName</div><div class="cell-sub">@(e.Designation ?? "")</div></td>
+                            <td>@e.Department</td>
+                            <td><div>@e.Phone</div><div class="cell-sub">@(e.Email ?? "No email")</div></td>
+                            <td class="num">@UiHelper.Taka(e.Salary)</td>
+                            <td><span class="pill @(e.IsActive ? "pill-ok" : "pill-muted")">@(e.IsActive ? "Active" : "Inactive")</span></td>
+                            <td>
+                                <div class="row-actions">
+                                    <a class="btn btn-soft btn-sm" asp-action="Edit" asp-route-id="@e.EmployeeId" aria-label="Edit"><i class="bi bi-pencil"></i></a>
+                                    <form asp-action="ToggleActive" asp-route-id="@e.EmployeeId" method="post">
+                                        <button class="btn btn-soft btn-sm" type="submit">@(e.IsActive ? "Deactivate" : "Reactivate")</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

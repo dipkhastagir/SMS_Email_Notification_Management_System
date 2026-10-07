@@ -1,0 +1,26 @@
+@model IEnumerable<DeliveryReportDto>
+@if (!Model.Any())
+{
+    <div class="text-muted small py-3">No attempts yet. The dispatch job picks this message up on its next run.</div>
+}
+else
+{
+    foreach (var a in Model)
+    {
+        <div class="attempt">
+            <span class="n @(a.Status == "Sent" ? "tint-ok" : "tint-bad")">@a.AttemptNo</span>
+            <div class="flex-grow-1">
+                <div class="d-flex justify-content-between">
+                    <span class="pill @UiHelper.StatusClass(a.Status)">@a.Status</span>
+                    <span class="cell-sub">@a.AttemptedAt.ToString("dd MMM, HH:mm:ss")</span>
+                </div>
+                <div class="small mt-1">@a.GatewayProvider</div>
+                @if (!string.IsNullOrEmpty(a.FailureReason))
+                {
+                    <div class="small text-danger">@a.FailureReason</div>
+                }
+                <div class="cell-sub" style="word-break:break-all">@a.GatewayResponse</div>
+            </div>
+        </div>
+    }
+}

@@ -1,0 +1,136 @@
+@{
+    var isAdmin = User.IsInRole(AppRoles.Administrator);
+    var isManager = User.IsInRole(AppRoles.Manager);
+    var isAccountant = User.IsInRole(AppRoles.Accountant);
+    var isHr = User.IsInRole(AppRoles.HR);
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+    var hideFab = controller == "Queue" && action == "ManualSend";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <partial name="_Head" />
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body>
+    <aside class="sidebar" aria-label="Main navigation">
+        <a class="brand" asp-controller="Dashboard" asp-action="Index">
+            <span class="brand-mark"><i class="bi bi-broadcast"></i></span>
+            <span>
+                <span class="brand-name d-block">NotifyHub</span>
+                <span class="brand-sub">SMS &amp; Email automation</span>
+            </span>
+        </a>
+
+        <nav class="nav-scroll">
+            <partial name="_NavLink" model='new NavLinkModel("Dashboard", "Index", "bi-grid-1x2", "Dashboard")' />
+
+            <div class="nav-group">Messaging</div>
+            <partial name="_NavLink" model='new NavLinkModel("Template", "Index", "bi-chat-square-text", "Templates")' />
+            <partial name="_NavLink" model='new NavLinkModel("Trigger", "Index", "bi-lightning-charge", "Triggers")' />
+            <partial name="_NavLink" model='new NavLinkModel("Queue", "Index", "bi-stack", "Message queue")' />
+            <partial name="_NavLink" model='new NavLinkModel("DeliveryLog", "Index", "bi-journal-check", "Delivery log")' />
+            <partial name="_NavLink" model='new NavLinkModel("Queue", "ManualSend", "bi-send", "Send a message")' />
+
+            @if (isAdmin || isAccountant || isHr || isManager)
+            {
+                <div class="nav-group">Business data</div>
+            }
+            @if (isAdmin || isAccountant)
+            {
+                <partial name="_NavLink" model='new NavLinkModel("Invoice", "Index", "bi-receipt", "Invoices")' />
+            }
+            @if (isAdmin || isManager)
+            {
+                <partial name="_NavLink" model='new NavLinkModel("Product", "Index", "bi-box-seam", "Stock")' />
+            }
+            @if (isAdmin || isHr)
+            {
+                <partial name="_NavLink" model='new NavLinkModel("Employee", "Index", "bi-people", "Employees")' />
+                <partial name="_NavLink" model='new NavLinkModel("Attendance", "Index", "bi-calendar-check", "Attendance")' />
+            }
+            @if (isAdmin || isHr || isAccountant)
+            {
+                <partial name="_NavLink" model='new NavLinkModel("Payroll", "Index", "bi-cash-coin", "Payroll")' />
+            }
+
+            @if (isAdmin || isManager)
+            {
+                <div class="nav-group">Settings</div>
+                <partial name="_NavLink" model='new NavLinkModel("Category", "Index", "bi-tags", "Template categories")' />
+            }
+            @if (isAdmin)
+            {
+                <partial name="_NavLink" model='new NavLinkModel("GatewaySettings", "Index", "bi-hdd-network", "Gateways")' />
+                <partial name="_NavLink" model='new NavLinkModel("User", "Index", "bi-person-gear", "Users & roles")' />
+                <a class="side-link" href="/hangfire" target="_blank" rel="noopener">
+                    <i class="bi bi-cpu"></i><span>Background jobs</span><i class="bi bi-box-arrow-up-right ms-auto small"></i>
+                </a>
+            }
+        </nav>
+
+        <div class="side-user">
+            <span class="avatar">@User.GetInitials()</span>
+            <span class="who">
+                <strong>@User.Identity?.Name</strong>
+                <span>@User.GetRole()</span>
+            </span>
+            <a class="icon-btn" asp-controller="Account" asp-action="ChangePassword" title="Change password" aria-label="Change password"><i class="bi bi-key"></i></a>
+            <form asp-controller="Account" asp-action="Logout" method="post" class="m-0">
+                <button type="submit" class="icon-btn" title="Sign out" aria-label="Sign out"><i class="bi bi-box-arrow-right"></i></button>
+            </form>
+        </div>
+    </aside>
+
+    <div class="main">
+        <header class="topbar">
+            <button class="menu-toggle" type="button" data-toggle-nav aria-label="Open menu"><i class="bi bi-list"></i></button>
+            <div class="crumb">
+                @(ViewData["Section"] ?? "NotifyHub") <i class="bi bi-chevron-right small mx-1"></i> <strong>@ViewData["Title"]</strong>
+            </div>
+            <div class="spacer"></div>
+            <span class="live-dot d-none d-md-inline-flex">Jobs running</span>
+            <span class="text-muted small d-none d-lg-inline ms-3">@DateTime.Now.ToString("dddd, dd MMMM yyyy")</span>
+        </header>
+
+        <main role="main">
+            @RenderBody()
+        </main>
+    </div>
+
+    @if (!hideFab)
+    {
+        <a class="fab" asp-controller="Queue" asp-action="ManualSend" title="Send a message">
+            <i class="bi bi-send-fill"></i><span>Send a message</span>
+        </a>
+    }
+
+    <partial name="_Toast" />
+
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content p-2">
+                <div class="modal-body">
+                    <div class="d-flex gap-3">
+                        <span class="metric"><span class="m-icon tint-bad"><i class="bi bi-exclamation-triangle"></i></span></span>
+                        <div>
+                            <h3 id="confirmTitle" class="mb-1">Are you sure?</h3>
+                            <p class="text-muted mb-0" data-confirm-text></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-soft" data-bs-dismiss="modal">Keep it</button>
+                    <button type="button" class="btn btn-danger-soft" data-confirm-ok>Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

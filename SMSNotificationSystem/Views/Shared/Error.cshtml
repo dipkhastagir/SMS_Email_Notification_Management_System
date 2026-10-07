@@ -1,0 +1,15 @@
+@model ErrorViewModel
+@{
+    ViewData["Title"] = "Something went wrong";
+    Layout = User.Identity?.IsAuthenticated == true ? "_Layout" : "_AuthLayout";
+}
+<div class="panel empty" style="max-width:560px;margin:60px auto;">
+    <i class="bi bi-cone-striped"></i>
+    <strong>The request could not be completed</strong>
+    <p>Check that SQL Server is running and the connection string in appsettings.json points to SmsNotificationDB, then try again.</p>
+    @if (Model.ShowRequestId)
+    {
+        <p class="small">Request ID: <code>@Model.RequestId</code></p>
+    }
+    <a class="btn btn-ink mt-2" href="/">Go to dashboard</a>
+</div>

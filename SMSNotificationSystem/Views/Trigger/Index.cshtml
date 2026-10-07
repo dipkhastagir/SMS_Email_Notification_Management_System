@@ -1,0 +1,84 @@
+@model IEnumerable<TriggerWithTemplateDto>
+@{
+    ViewData["Title"] = "Triggers";
+    ViewData["Section"] = "Messaging";
+    var canEdit = User.IsInRole(AppRoles.Administrator) || User.IsInRole(AppRoles.Manager);
+}
+<div class="page-head">
+    <div>
+        <h1>Event triggers</h1>
+        <p>Rules that watch business data. The background scan checks every active trigger every few minutes and queues a message for each matching record.</p>
+    </div>
+    @if (canEdit)
+    {
+        <div class="page-actions">
+            <div class="dropdown">
+                <button class="btn btn-ink dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-plus-lg me-1"></i> New trigger
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 p-2">
+                    @foreach (var info in EventTypes.All.Values)
+                    {
+                        <li>
+                            <a class="dropdown-item rounded-3 py-2" asp-action="Create" asp-route-eventType="@info.Key">
+                                <i class="bi @info.Icon me-2"></i>@info.DisplayName
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+</div>
+
+@if (!Model.Any())
+{
+    <div class="panel"><partial name="_EmptyState" model='new EmptyStateModel("bi-lightning-charge", "No triggers yet", "Create a trigger to start sending notifications automatically.")' /></div>
+}
+else
+{
+    <div class="panel panel-flush">
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr><th>Trigger</th><th>Watches</th><th>Condition</th><th>Template</th><th>Sends to</th><th class="num">Queued</th><th>Last scan</th><th>Status</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="cell-title">@t.Name</div>
+                                <div class="cell-sub">At most once every @t.CooldownHours h per record</div>
+                            </td>
+                            <td><span class="channel"><i class="bi @EventTypes.Icon(t.EventType)"></i>@EventTypes.DisplayName(t.EventType)</span></td>
+                            <td><span class="condition">@t.ConditionText</span></td>
+                            <td>
+                                <div>@t.TemplateName</div>
+                                <div class="cell-sub"><i class="bi @UiHelper.ChannelIcon(t.Channel)"></i> @t.Channel</div>
+                            </td>
+                            <td class="cell-sub">@(string.IsNullOrEmpty(t.RecipientContact) ? "Record's own contact" : $"{t.RecipientName} ({t.RecipientContact})")</td>
+                            <td class="num">@t.MessagesQueued</td>
+                            <td class="cell-sub">@UiHelper.TimeAgo(t.LastRunAt)</td>
+                            <td><span class="pill @(t.IsActive ? "pill-ok" : "pill-muted")">@(t.IsActive ? "Active" : "Paused")</span></td>
+                            <td>
+                                @if (canEdit)
+                                {
+                                    <div class="row-actions">
+                                        <form asp-action="Toggle" asp-route-id="@t.TriggerId" method="post">
+                                            <button class="btn btn-soft btn-sm" type="submit" title="@(t.IsActive ? "Pause" : "Resume")"><i class="bi @(t.IsActive ? "bi-pause" : "bi-play")"></i></button>
+                                        </form>
+                                        <a class="btn btn-soft btn-sm" asp-action="Edit" asp-route-id="@t.TriggerId" aria-label="Edit"><i class="bi bi-pencil"></i></a>
+                                        <form asp-action="Delete" asp-route-id="@t.TriggerId" method="post" data-confirm="Delete the trigger &quot;@t.Name&quot;? Messages it already queued are kept.">
+                                            <button class="btn btn-danger-soft btn-sm" type="submit" aria-label="Delete"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </div>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

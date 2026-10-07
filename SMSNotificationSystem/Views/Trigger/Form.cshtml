@@ -1,0 +1,142 @@
+@model TriggerFormViewModel
+@{
+    ViewData["Title"] = Model.IsEdit ? "Edit trigger" : "New trigger";
+    ViewData["Section"] = "Triggers";
+    var meta = EventTypes.All.ToDictionary(k => k.Key, v => new
+    {
+        displayName = v.Value.DisplayName,
+        description = v.Value.Description,
+        fields = v.Value.Fields,
+        placeholders = v.Value.Placeholders,
+        defaultField = v.Value.DefaultField,
+        defaultOperator = v.Value.DefaultOperator,
+        defaultValue = v.Value.DefaultValue
+    });
+}
+<div class="page-head">
+    <div>
+        <h1>@ViewData["Title"]</h1>
+        <p>Pick the event, describe when it should fire, then choose which template to send.</p>
+    </div>
+</div>
+
+<form asp-action="@(Model.IsEdit ? "Edit" : "Create")" method="post">
+    <input type="hidden" asp-for="TriggerId" />
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="panel">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+                <div class="form-floating mb-3">
+                    <input asp-for="Name" class="form-control" placeholder=" " />
+                    <label asp-for="Name">Trigger name</label>
+                    <span asp-validation-for="Name"></span>
+                </div>
+
+                <div class="form-section">When this happens</div>
+                <div class="form-floating mb-1">
+                    <select asp-for="EventType" class="form-select" data-event-select>
+                        <option value="">Choose an event…</option>
+                        @foreach (var info in EventTypes.All.Values)
+                        {
+                            <option value="@info.Key">@info.DisplayName</option>
+                        }
+                    </select>
+                    <label asp-for="EventType"></label>
+                </div>
+                <div class="form-hint mb-3" data-event-help></div>
+                <span asp-validation-for="EventType"></span>
+
+                <div class="row g-2 mb-1">
+                    <div class="col-sm-5">
+                        <div class="form-floating">
+                            <select asp-for="ConditionField" class="form-select" data-field-select data-initial="@Model.ConditionField"></select>
+                            <label asp-for="ConditionField"></label>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="form-floating">
+                            <select asp-for="ConditionOperator" class="form-select" data-op-select>
+                                @foreach (var op in EventTypes.Operators)
+                                {
+                                    <option value="@op">@op</option>
+                                }
+                            </select>
+                            <label asp-for="ConditionOperator"></label>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="form-floating">
+                            <input asp-for="ConditionValue" class="form-control" placeholder=" " data-value-input />
+                            <label asp-for="ConditionValue"></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-hint mb-3">The value can be a number, a word such as Absent, or another field name such as ReorderLevel.</div>
+                <span asp-validation-for="ConditionField"></span>
+                <span asp-validation-for="ConditionValue"></span>
+
+                <div class="form-section mt-4">Send this</div>
+                <div class="form-floating mb-1">
+                    <select asp-for="TemplateId" asp-items="Model.Templates" class="form-select">
+                        <option value="0">Choose a template…</option>
+                    </select>
+                    <label asp-for="TemplateId"></label>
+                </div>
+                <span asp-validation-for="TemplateId"></span>
+                <div class="form-hint mb-3">Placeholders available for this event: <span data-event-chips></span></div>
+
+                <div class="form-section mt-4">To</div>
+                <div class="row g-2 mb-1">
+                    <div class="col-sm-5">
+                        <div class="form-floating">
+                            <input asp-for="RecipientName" class="form-control" placeholder=" " />
+                            <label asp-for="RecipientName"></label>
+                        </div>
+                    </div>
+                    <div class="col-sm-7">
+                        <div class="form-floating">
+                            <input asp-for="RecipientContact" class="form-control" placeholder=" " />
+                            <label asp-for="RecipientContact"></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-hint mb-3" data-recipient-hint></div>
+                <span asp-validation-for="RecipientContact"></span>
+
+                <div class="row g-3 align-items-center mt-2">
+                    <div class="col-sm-6">
+                        <div class="form-floating">
+                            <input asp-for="CooldownHours" class="form-control" placeholder=" " min="1" max="720" />
+                            <label asp-for="CooldownHours">Cooldown (hours)</label>
+                        </div>
+                        <span asp-validation-for="CooldownHours"></span>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="form-check form-switch">
+                            <input asp-for="IsActive" class="form-check-input" role="switch" />
+                            <label asp-for="IsActive" class="form-check-label ms-2"></label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-hint">The same record won't get another message from this trigger until the cooldown passes. Attendance and salary alerts are only ever sent once per record.</div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="panel position-sticky" style="top:96px">
+                <h3 class="mb-3">Rule summary</h3>
+                <div class="preview-shell">
+                    <div class="bubble"><i class="bi bi-lightning-charge-fill text-warning me-1"></i><span data-rule-sentence>Choose an event to build the rule.</span></div>
+                </div>
+                <p class="form-hint mt-3">Messages created by this trigger appear in the queue after the next scan. Administrators and managers can run a scan straight away from the dashboard.</p>
+                <div class="d-flex gap-2 mt-3">
+                    <button class="btn btn-ink" type="submit">Save trigger</button>
+                    <a class="btn btn-soft" asp-action="Index">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<script type="application/json" id="eventMeta">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(meta))</script>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

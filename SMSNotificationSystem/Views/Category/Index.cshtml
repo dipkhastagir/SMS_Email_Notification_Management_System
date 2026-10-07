@@ -1,0 +1,58 @@
+@model IEnumerable<TemplateCategory>
+@{
+    ViewData["Title"] = "Template categories";
+    ViewData["Section"] = "Settings";
+}
+<div class="page-head">
+    <div>
+        <h1>Template categories</h1>
+        <p>Group templates by the kind of message they send. A category can be deleted once no template uses it.</p>
+    </div>
+</div>
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="panel panel-flush">
+            <div class="table-wrap">
+                <table class="table">
+                    <thead><tr><th>Name</th><th>Description</th><th class="num">Templates</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var c in Model)
+                        {
+                            <tr>
+                                <td class="cell-title">@c.Name</td>
+                                <td class="cell-sub">@(c.Description ?? "—")</td>
+                                <td class="num">@c.TemplateCount</td>
+                                <td>
+                                    <div class="row-actions">
+                                        @if (c.TemplateCount == 0)
+                                        {
+                                            <form asp-action="Delete" asp-route-id="@c.CategoryId" method="post" data-confirm="Delete the category &quot;@c.Name&quot;?">
+                                                <button class="btn btn-danger-soft btn-sm" type="submit" aria-label="Delete"><i class="bi bi-trash"></i></button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="panel">
+            <h3 class="mb-3">Add a category</h3>
+            <form asp-action="Create" method="post">
+                <div class="form-floating mb-3">
+                    <input name="name" id="name" class="form-control" placeholder=" " maxlength="80" required />
+                    <label for="name">Name</label>
+                </div>
+                <div class="form-floating mb-3">
+                    <input name="description" id="description" class="form-control" placeholder=" " maxlength="250" />
+                    <label for="description">Description (optional)</label>
+                </div>
+                <button class="btn btn-ink" type="submit">Add category</button>
+            </form>
+        </div>
+    </div>
+</div>

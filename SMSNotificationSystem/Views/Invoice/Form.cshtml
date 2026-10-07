@@ -1,0 +1,43 @@
+@model Invoice
+@{
+    var isEdit = Model.InvoiceId > 0;
+    ViewData["Title"] = isEdit ? "Edit invoice" : "New invoice";
+    ViewData["Section"] = "Invoices";
+}
+<div class="page-head"><div><h1>@ViewData["Title"]</h1><p>Reminders go to the phone number or email here, depending on the template's channel.</p></div></div>
+<div class="panel" style="max-width:720px">
+    <form asp-action="@(isEdit ? "Edit" : "Create")" method="post">
+        <input type="hidden" asp-for="InvoiceId" />
+        <div class="row g-3">
+            <div class="col-sm-5">
+                <div class="form-floating"><input asp-for="InvoiceNo" class="form-control" placeholder=" " /><label asp-for="InvoiceNo"></label></div>
+                <span asp-validation-for="InvoiceNo"></span>
+            </div>
+            <div class="col-sm-7">
+                <div class="form-floating"><input asp-for="CustomerName" class="form-control" placeholder=" " /><label asp-for="CustomerName"></label></div>
+                <span asp-validation-for="CustomerName"></span>
+            </div>
+            <div class="col-sm-5">
+                <div class="form-floating"><input asp-for="CustomerPhone" class="form-control" placeholder=" " /><label asp-for="CustomerPhone"></label></div>
+                <span asp-validation-for="CustomerPhone"></span>
+            </div>
+            <div class="col-sm-7">
+                <div class="form-floating"><input asp-for="CustomerEmail" class="form-control" placeholder=" " /><label asp-for="CustomerEmail">Customer email (optional)</label></div>
+                <span asp-validation-for="CustomerEmail"></span>
+            </div>
+            <div class="col-sm-6">
+                <div class="form-floating"><input asp-for="Amount" class="form-control" placeholder=" " step="0.01" min="0.01" /><label asp-for="Amount">Amount (Tk)</label></div>
+                <span asp-validation-for="Amount"></span>
+            </div>
+            <div class="col-sm-6">
+                <div class="form-floating"><input asp-for="DueDate" type="date" class="form-control" /><label asp-for="DueDate"></label></div>
+                <span asp-validation-for="DueDate"></span>
+            </div>
+        </div>
+        <div class="d-flex gap-2 mt-4">
+            <button class="btn btn-ink" type="submit">Save invoice</button>
+            <a class="btn btn-soft" asp-action="Index">Cancel</a>
+        </div>
+    </form>
+</div>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

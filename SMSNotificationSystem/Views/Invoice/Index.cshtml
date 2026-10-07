@@ -1,0 +1,67 @@
+@model IEnumerable<Invoice>
+@{
+    ViewData["Title"] = "Invoices";
+    ViewData["Section"] = "Business data";
+    var list = Model.ToList();
+    var unpaid = list.Where(i => !i.IsPaid).ToList();
+}
+<div class="page-head">
+    <div>
+        <h1>Invoices</h1>
+        <p>Unpaid invoices close to their due date trigger payment reminders automatically. Marking one as paid stops its reminders.</p>
+    </div>
+    <div class="page-actions"><a class="btn btn-ink" asp-action="Create"><i class="bi bi-plus-lg me-1"></i> New invoice</a></div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-sm-4"><div class="panel metric"><span class="m-icon tint-info"><i class="bi bi-receipt"></i></span><div><div class="m-value">@unpaid.Count</div><div class="m-label">Unpaid invoices</div></div></div></div>
+    <div class="col-sm-4"><div class="panel metric"><span class="m-icon tint-warn"><i class="bi bi-hourglass-split"></i></span><div><div class="m-value">@unpaid.Count(i => i.DaysUntilDue >= 0 && i.DaysUntilDue <= 3)</div><div class="m-label">Due within 3 days</div></div></div></div>
+    <div class="col-sm-4"><div class="panel metric"><span class="m-icon tint-bad"><i class="bi bi-cash-stack"></i></span><div><div class="m-value">@UiHelper.Taka(unpaid.Sum(i => i.Amount))</div><div class="m-label">Outstanding</div></div></div></div>
+</div>
+
+<div class="panel panel-flush">
+    @if (!list.Any())
+    {
+        <partial name="_EmptyState" model='new EmptyStateModel("bi-receipt", "No invoices yet", "Add an invoice to try the payment reminder trigger.")' />
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Invoice</th><th>Customer</th><th class="num">Amount</th><th>Due</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var i in list)
+                    {
+                        <tr>
+                            <td class="cell-title">@i.InvoiceNo</td>
+                            <td><div>@i.CustomerName</div><div class="cell-sub">@i.CustomerPhone @(i.CustomerEmail != null ? " / " + i.CustomerEmail : "")</div></td>
+                            <td class="num">@UiHelper.Taka(i.Amount)</td>
+                            <td>
+                                <div>@i.DueDate.ToString("dd MMM yyyy")</div>
+                                @if (!i.IsPaid)
+                                {
+                                    <div class="cell-sub">@(i.DaysUntilDue < 0 ? $"{-i.DaysUntilDue} day(s) overdue" : i.DaysUntilDue == 0 ? "Due today" : $"In {i.DaysUntilDue} day(s)")</div>
+                                }
+                            </td>
+                            <td><span class="pill @UiHelper.StatusClass(i.PaymentState)">@i.PaymentState</span></td>
+                            <td>
+                                <div class="row-actions">
+                                    @if (!i.IsPaid)
+                                    {
+                                        <form asp-action="MarkAsPaid" asp-route-id="@i.InvoiceId" method="post">
+                                            <button class="btn btn-soft btn-sm" type="submit"><i class="bi bi-check2"></i> Mark paid</button>
+                                        </form>
+                                    }
+                                    <a class="btn btn-soft btn-sm" asp-action="Edit" asp-route-id="@i.InvoiceId" aria-label="Edit"><i class="bi bi-pencil"></i></a>
+                                    <form asp-action="Delete" asp-route-id="@i.InvoiceId" method="post" data-confirm="Delete invoice @i.InvoiceNo?">
+                                        <button class="btn btn-danger-soft btn-sm" type="submit" aria-label="Delete"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

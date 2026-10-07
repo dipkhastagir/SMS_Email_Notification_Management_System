@@ -1,0 +1,47 @@
+@model IEnumerable<User>
+@{
+    ViewData["Title"] = "Users & roles";
+    ViewData["Section"] = "Settings";
+    var me = User.GetUserId();
+}
+<div class="page-head">
+    <div>
+        <h1>Users &amp; roles</h1>
+        <p>Administrators manage everything. Accountants handle invoices and payroll, HR handles employees, attendance and payroll, and Managers handle stock, templates and triggers.</p>
+    </div>
+    <div class="page-actions"><a class="btn btn-ink" asp-action="Create"><i class="bi bi-person-plus me-1"></i> Add user</a></div>
+</div>
+<div class="panel panel-flush">
+    <div class="table-wrap">
+        <table class="table">
+            <thead><tr><th>User</th><th>Role</th><th>Last sign-in</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var u in Model)
+                {
+                    <tr class="@(u.IsActive ? "" : "opacity-50")">
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="avatar" style="width:34px;height:34px;font-size:.75rem">@(string.Concat(u.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => w[0])).ToUpperInvariant())</span>
+                                <div><div class="cell-title">@u.FullName @(u.UserId == me ? "(you)" : "")</div><div class="cell-sub">@u.Email</div></div>
+                            </div>
+                        </td>
+                        <td>@u.Role</td>
+                        <td class="cell-sub">@UiHelper.TimeAgo(u.LastLoginAt)</td>
+                        <td><span class="pill @(u.IsActive ? "pill-ok" : "pill-muted")">@(u.IsActive ? "Active" : "Deactivated")</span></td>
+                        <td>
+                            <div class="row-actions">
+                                <a class="btn btn-soft btn-sm" asp-action="Edit" asp-route-id="@u.UserId" aria-label="Edit"><i class="bi bi-pencil"></i></a>
+                                @if (u.UserId != me)
+                                {
+                                    <form asp-action="ToggleActive" asp-route-id="@u.UserId" method="post">
+                                        <button class="btn btn-soft btn-sm" type="submit">@(u.IsActive ? "Deactivate" : "Reactivate")</button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
